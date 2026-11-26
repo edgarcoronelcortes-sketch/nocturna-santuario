@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nocturna | Santuario de Almas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Montserrat:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-void: #070508;
+            --bg-card: rgba(20, 12, 24, 0.78);
+            --crimson: #9e112b;
+            --crimson-glow: #ff1e42;
+            --silver: #e2dce6;
+            --muted: #9a8c98;
+            --border-gothic: rgba(158, 17, 43, 0.45);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-void);
+            color: var(--silver);
+            font-family: 'Cormorant Garamond', serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        header {
+            text-align: center;
+            padding: 2.5rem 1rem 1rem;
+        }
+
+        h1 {
+            font-family: 'Cinzel Decorative', cursive;
+            font-size: clamp(2.1rem, 5vw, 3.6rem);
+            color: #fff;
+            text-shadow: 0 0 15px var(--crimson-glow), 0 0 30px var(--crimson);
+            letter-spacing: 3px;
+        }
+
+        .subtitle {
+            font-size: 1.25rem;
+            font-style: italic;
+            color: var(--muted);
+            margin-top: 0.4rem;
+        }
+
+        /* Barra de apodo / usuario activo */
+        .user-bar {
+            max-width: 1000px;
+            margin: 1rem auto 0;
+            padding: 0 1.5rem;
+        }
+
+        .user-bar-inner {
+            background: rgba(25, 13, 30, 0.88);
+            border: 1px solid var(--border-gothic);
+            border-radius: 8px;
+            padding: 0.9rem 1.2rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .user-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            align-items: center;
+            flex: 1;
+            justify-content: flex-end;
+        }
+
+        .user-controls input, .user-controls select {
+            width: auto;
+            min-width: 180px;
+            padding: 0.5rem 0.75rem;
+            font-size: 1rem;
+        }
+
+        .small-btn {
+            background: var(--crimson);
+            color: #fff;
+            border: 1px solid var(--crimson-glow);
+            padding: 0.5rem 1rem;
+            font-family: 'Cinzel Decorative', cursive;
+            font-size: 0.8rem;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        nav {
+            display: flex;
+            justify-content: center;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            margin: 1.4rem auto 2rem;
+            padding: 0 1rem;
+        }
+
+        .tab-btn {
+            background: rgba(25, 15, 30, 0.8);
+            border: 1px solid var(--border-gothic);
+            color: var(--silver);
+            padding: 0.75rem 1.4rem;
+            font-family: 'Cinzel Decorative', cursive;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+        }
+
+        .tab-btn:hover, .tab-btn.active {
+            background: var(--crimson);
+            color: #fff;
+            box-shadow: 0 0 20px var(--crimson-glow);
+            transform: translateY(-2px);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 1.5rem 4rem;
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.6s ease;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .gothic-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-gothic);
+            border-radius: 10px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(158, 17, 43, 0.1);
+            position: relative;
+        }
+
+        .gothic-card::before {
+            content: "❖";
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-void);
+            padding: 0 10px;
+            color: var(--crimson-glow);
+            font-size: 1.2rem;
+        }
+
+        h2 {
+            font-family: 'Cinzel Decorative', cursive;
+            color: #fff;
+            margin-bottom: 1rem;
+            font-size: 1.55rem;
+            border-bottom: 1px solid var(--border-gothic);
+            padding-bottom: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.4rem;
+            font-size: 1.1rem;
+            color: #d8c8e0;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 0.85rem;
+            background: rgba(10, 6, 12, 0.9);
+            border: 1px solid #4a2536;
+            border-radius: 6px;
+            color: #fff;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.15rem;
+            transition: border 0.3s;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--crimson-glow);
+            box-shadow: 0 0 10px rgba(255, 30, 66, 0.3);
+        }
+
+        button.action-btn {
+            background: linear-gradient(135deg, #6e0b1e, var(--crimson));
+            color: white;
+            border: 1px solid var(--crimson-glow);
+            padding: 0.9rem 2rem;
+            font-family: 'Cinzel Decorative', cursive;
+            font-size: 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+
+        button.action-btn:hover {
+            box-shadow: 0 0 20px var(--crimson-glow);
+            transform: scale(1.01);
+        }
+
+        .art-showcase {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        #interactive-art {
+            border: 1px solid var(--border-gothic);
+            border-radius: 50%;
+            background: radial-gradient(circle, #1f0a14 0%, #050205 100%);
+            box-shadow: 0 0 35px rgba(158, 17, 43, 0.35);
+            cursor: crosshair;
+            margin: 1rem 0;
+            max-width: 100%;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+
+        .feed-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.2rem;
+        }
+
+        .entry-card {
+            background: rgba(14, 8, 18, 0.9);
+            border-left: 3px solid var(--crimson-glow);
+            padding: 1.2rem;
+            border-radius: 6px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        .entry-meta {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.78rem;
+            color: var(--muted);
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .entry-body {
+            font-size: 1.18rem;
+            line-height: 1.5;
+            font-style: italic;
+            color: #f3eaf7;
+        }
+
+        .entry-footer {
+            margin-top: 0.7rem;
+            font-weight: bold;
+            color: #ff6b8b;
+            font-size: 1rem;
+        }
+
+        .question-box {
+            background: linear-gradient(145deg, #1a0b14, #110917);
+            border: 1px dashed var(--crimson-glow);
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .question-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 1rem;
+        }
+
+        .quote-generator {
+            font-size: 1.35rem;
+            text-align: center;
+            padding: 1.5rem;
+            color: #ffd6e0;
+            font-style: italic;
+        }
+
+        .perfil-bloque {
+            background: rgba(14, 7, 19, 0.88);
+            border: 1px solid rgba(255, 30, 66, 0.35);
+            border-radius: 8px;
+            padding: 1.4rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .perfil-titulo {
+            font-family: 'Cinzel Decorative', cursive;
+            color: #ff6b8b;
+            font-size: 1.3rem;
+            margin-bottom: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="bg-canvas"></canvas>
+
+    <header>
+        <h1>Nocturna & Eternidad</h1>
+        <p class="subtitle">Cada quien con su apodo, todas las respuestas guardadas para ambos</p>
+    </header>
+
+    <!-- BARRA DE APODO / USUARIO ACTIVO -->
+    <div class="user-bar">
+        <div class="user-bar-inner">
+            <div>
+                Apodo activo: <strong id="apodo-actual-texto" style="color: #ff6b8b;">Sin elegir aún</strong>
+            </div>
+            <div class="user-controls">
+                <select id="selector-apodo" onchange="seleccionarApodoGuardado()">
+                    <option value="">-- Apodos registrados --</option>
+                </select>
+                <input type="text" id="input-nuevo-apodo" placeholder="Escribe tu apodo o nombre">
+                <button class="small-btn" onclick="guardarApodo()">Entrar con apodo</button>
+            </div>
+        </div>
+    </div>
+
+    <nav>
+        <button class="tab-btn active" onclick="cambiarTab('preguntas', this)">🕯️ Responder Preguntas</button>
+        <button class="tab-btn" onclick="cambiarTab('perfiles', this)">👥 Respuestas por Persona</button>
+        <button class="tab-btn" onclick="cambiarTab('dedicatorias', this)">📜 Dedicatorias</button>
+        <button class="tab-btn" onclick="cambiarTab('inspiracion', this)">🖤 Versos</button>
+        <button class="tab-btn" onclick="cambiarTab('santuario', this)">🥀 Figuras</button>
+    </nav>
+
+    <div class="container">
+
+        <!-- 1. RESPONDER PREGUNTAS -->
+        <div id="preguntas" class="section active">
+            <div class="gothic-card">
+                <h2>El Oráculo de las Dos Almas</h2>
+                <p style="margin-bottom: 1rem;">Pon tu apodo arriba y responde. Quedará guardado bajo tu nombre para que ambos lo lean.</p>
+
+                <div class="question-box">
+                    <div class="question-text" id="pregunta-actual">¿Cuál fue el instante exacto en que supiste que querías estar conmigo?</div>
+                    <button class="tab-btn" onclick="nuevaPregunta()">🎲 Otra pregunta</button>
+                </div>
+
+                <div class="form-group">
+                    <label>Tu respuesta:</label>
+                    <textarea id="jugador-respuesta" rows="3" placeholder="Escribe aquí tu respuesta..."></textarea>
+                </div>
+
+                <button class="action-btn" onclick="enviarRespuesta()">Guardar mi Respuesta</button>
+            </div>
+
+            <div class="gothic-card">
+                <h2>Últimas Respuestas Guardadas</h2>
+                <div id="lista-respuestas" class="feed-grid"></div>
+            </div>
+        </div>
+
+        <!-- 2. APARTADO SEPARADO POR PERSONA / APODO -->
+        <div id="perfiles" class="section">
+            <div class="gothic-card">
+                <h2>Apartado por Apodo / Persona</h2>
+                <p style="margin-bottom: 1.2rem;">Aquí ves reunido todo lo que ha respondido y dedicado cada apodo (tus respuestas y las de tu pareja).</p>
+                <div id="contenedor-perfiles"></div>
+            </div>
+        </div>
+
+        <!-- 3. DEDICATORIAS -->
+        <div id="dedicatorias" class="section">
+            <div class="gothic-card">
+                <h2>Escribir una Dedicatoria</h2>
+                <div class="form-group">
+                    <label>Para:</label>
+                    <input type="text" id="ded-destinatario" placeholder="Nombre o apodo de tu pareja">
+                </div>
+                <div class="form-group">
+                    <label>Estilo de la carta:</label>
+                    <select id="ded-animo">
+                        <option value="🥀 Devoción Eterna">🥀 Devoción Eterna</option>
+                        <option value="🩸 Pasión Nocturna">🩸 Pasión Nocturna</option>
+                        <option value="🌙 Nostalgia bajo la Luna">🌙 Nostalgia bajo la Luna</option>
+                        <option value="🔮 Promesa Inquebrantable">🔮 Promesa Inquebrantable</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Tu mensaje:</label>
+                    <textarea id="ded-mensaje" rows="4" placeholder="Escribe algo especial para dedicar..."></textarea>
+                </div>
+                <button class="action-btn" onclick="enviarDedicatoria()">Guardar Dedicatoria</button>
+            </div>
+
+            <div class="gothic-card">
+                <h2>Dedicatorias Guardadas</h2>
+                <div id="lista-dedicatorias" class="feed-grid"></div>
+            </div>
+        </div>
+
+        <!-- 4. VERSOS PARA DEDICAR -->
+        <div id="inspiracion" class="section">
+            <div class="gothic-card">
+                <h2>Frases para Dedicar</h2>
+                <p>Genera un verso y pásalo directo a tu dedicatoria con un clic.</p>
+                <div class="quote-generator" id="verso-box">
+                    "Si tuviera que elegir entre respirar y amarte, usaría mi último aliento para decirte que eres mi eternidad."
+                </div>
+                <div class="controls-row">
+                    <button class="tab-btn" onclick="generarVerso()">✨ Nuevo Verso</button>
+                    <button class="tab-btn" onclick="copiarAlGrimorio()">📜 Usar en Dedicatoria</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. FIGURAS PROGRAMADAS -->
+        <div id="santuario" class="section">
+            <div class="gothic-card art-showcase">
+                <h2>Rosa Matemática & Latido Carmesí</h2>
+                <p>Mueve el cursor sobre el círculo o haz clic para cambiar la figura.</p>
+                <canvas id="interactive-art" width="380" height="380"></canvas>
+                <div class="controls-row">
+                    <button class="tab-btn" onclick="cambiarFigura('rosa')">🌹 Rosa de Maurer</button>
+                    <button class="tab-btn" onclick="cambiarFigura('corazon')">🫀 Corazón Paramétrico</button>
+                    <button class="tab-btn" onclick="cambiarFigura('espiral')">🌀 Espiral Hipnótica</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let apodoActivo = localStorage.getItem('apodo_santuario') || '';
+
+        function actualizarTextoApodo() {
+            const label = document.getElementById('apodo-actual-texto');
+            label.innerText = apodoActivo ? apodoActivo : 'Sin elegir aún';
+            if (apodoActivo) {
+                document.getElementById('input-nuevo-apodo').value = apodoActivo;
+            }
+        }
+
+        async function cargarUsuarios() {
+            const res = await fetch('/api/usuarios');
+            const usuarios = await res.json();
+            const select = document.getElementById('selector-apodo');
+            select.innerHTML = '<option value="">-- Apodos registrados --</option>';
+            usuarios.forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u.apodo;
+                opt.textContent = u.apodo;
+                if (u.apodo === apodoActivo) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
+
+        async function guardarApodo() {
+            const input = document.getElementById('input-nuevo-apodo');
+            const nuevo = input.value.trim();
+            if (!nuevo) {
+                alert('Escribe tu apodo o nombre primero.');
+                return;
+            }
+            await fetch('/api/usuarios', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ apodo: nuevo })
+            });
+            apodoActivo = nuevo;
+            localStorage.setItem('apodo_santuario', apodoActivo);
+            actualizarTextoApodo();
+            await cargarUsuarios();
+            await cargarPerfiles();
+        }
+
+        function seleccionarApodoGuardado() {
+            const val = document.getElementById('selector-apodo').value;
+            if (val) {
+                apodoActivo = val;
+                localStorage.setItem('apodo_santuario', apodoActivo);
+                actualizarTextoApodo();
+            }
+        }
+
+        function cambiarTab(tabId, btn) {
+            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            btn.classList.add('active');
+            if (tabId === 'preguntas') cargarRespuestas();
+            if (tabId === 'dedicatorias') cargarDedicatorias();
+            if (tabId === 'perfiles') cargarPerfiles();
+        }
+
+        const bgCanvas = document.getElementById('bg-canvas');
+        const bgCtx = bgCanvas.getContext('2d');
+        let particles = [];
+        let mouse = { x: null, y: null };
+
+        function resizeBg() {
+            bgCanvas.width = window.innerWidth;
+            bgCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeBg);
+        resizeBg();
+
+        window.addEventListener('mousemove', e => {
+            mouse.x = e.x;
+            mouse.y = e.y;
+        });
+
+        for (let i = 0; i < 65; i++) {
+            particles.push({
+                x: Math.random() * bgCanvas.width,
+                y: Math.random() * bgCanvas.height,
+                vx: (Math.random() - 0.5) * 0.6,
+                vy: (Math.random() - 0.5) * 0.6,
+                size: Math.random() * 2 + 1
+            });
+        }
+
+        function animateBg() {
+            bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+            bgCtx.fillStyle = '#ff1e42';
+
+            particles.forEach((p, index) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                if (p.x < 0 || p.x > bgCanvas.width) p.vx *= -1;
+                if (p.y < 0 || p.y > bgCanvas.height) p.vy *= -1;
+
+                bgCtx.beginPath();
+                bgCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                bgCtx.fill();
+
+                for (let j = index + 1; j < particles.length; j++) {
+                    const p2 = particles[j];
+                    const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+                    if (dist < 120) {
+                        bgCtx.strokeStyle = `rgba(158, 17, 43, ${1 - dist / 120})`;
+                        bgCtx.lineWidth = 0.6;
+                        bgCtx.beginPath();
+                        bgCtx.moveTo(p.x, p.y);
+                        bgCtx.lineTo(p2.x, p2.y);
+                        bgCtx.stroke();
+                    }
+                }
+
+                if (mouse.x) {
+                    const distMouse = Math.hypot(p.x - mouse.x, p.y - mouse.y);
+                    if (distMouse < 150) {
+                        bgCtx.strokeStyle = `rgba(255, 100, 130, ${1 - distMouse / 150})`;
+                        bgCtx.beginPath();
+                        bgCtx.moveTo(p.x, p.y);
+                        bgCtx.lineTo(mouse.x, mouse.y);
+                        bgCtx.stroke();
+                    }
+                }
+            });
+            requestAnimationFrame(animateBg);
+        }
+        animateBg();
+
+        const artCanvas = document.getElementById('interactive-art');
+        const artCtx = artCanvas.getContext('2d');
+        let modoFigura = 'rosa';
+        let anguloAnim = 0;
+        let factorInteractivo = 71;
+
+        artCanvas.addEventListener('mousemove', (e) => {
+            const rect = artCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            factorInteractivo = Math.floor((x / rect.width) * 120) + 10;
+        });
+
+        artCanvas.addEventListener('click', () => {
+            const modos = ['rosa', 'corazon', 'espiral'];
+            modoFigura = modos[(modos.indexOf(modoFigura) + 1) % modos.length];
+        });
+
+        function cambiarFigura(nuevoModo) {
+            modoFigura = nuevoModo;
+        }
+
+        function dibujarArte() {
+            artCtx.fillStyle = 'rgba(10, 4, 8, 0.18)';
+            artCtx.fillRect(0, 0, artCanvas.width, artCanvas.height);
+
+            const cx = artCanvas.width / 2;
+            const cy = artCanvas.height / 2;
+            anguloAnim += 0.015;
+
+            artCtx.save();
+            artCtx.translate(cx, cy);
+
+            if (modoFigura === 'rosa') {
+                const n = 6;
+                const d = factorInteractivo;
+                artCtx.beginPath();
+                artCtx.strokeStyle = `hsl(${340 + Math.sin(anguloAnim) * 15}, 90%, 55%)`;
+                artCtx.lineWidth = 1.2;
+                for (let theta = 0; theta <= 360; theta++) {
+                    let k = theta * d * (Math.PI / 180);
+                    let r = 145 * Math.sin(n * k + anguloAnim);
+                    let x = r * Math.cos(k);
+                    let y = r * Math.sin(k);
+                    if (theta === 0) artCtx.moveTo(x, y);
+                    else artCtx.lineTo(x, y);
+                }
+                artCtx.stroke();
+            } else if (modoFigura === 'corazon') {
+                const latido = 1 + Math.sin(anguloAnim * 4) * 0.08;
+                artCtx.beginPath();
+                artCtx.strokeStyle = '#ff1e42';
+                artCtx.lineWidth = 2.5;
+                for (let t = 0; t <= Math.PI * 2; t += 0.02) {
+                    let x = 16 * Math.pow(Math.sin(t), 3);
+                    let y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+                    x *= 8.5 * latido;
+                    y *= 8.5 * latido;
+                    if (t === 0) artCtx.moveTo(x, y);
+                    else artCtx.lineTo(x, y);
+                }
+                artCtx.closePath();
+                artCtx.stroke();
+            } else if (modoFigura === 'espiral') {
+                artCtx.beginPath();
+                artCtx.strokeStyle = '#c77dff';
+                artCtx.lineWidth = 1.8;
+                for (let i = 0; i < 250; i++) {
+                    const angle = 0.15 * i + anguloAnim * 2;
+                    const r = 0.65 * i;
+                    const x = r * Math.cos(angle);
+                    const y = r * Math.sin(angle);
+                    if (i === 0) artCtx.moveTo(x, y);
+                    else artCtx.lineTo(x, y);
+                }
+                artCtx.stroke();
+            }
+
+            artCtx.restore();
+            requestAnimationFrame(dibujarArte);
+        }
+        dibujarArte();
+
+        const bancoPreguntas = [
+            "¿Cuál fue el instante exacto en que supiste que querías estar conmigo?",
+            "Si fuéramos personajes de una novela gótica, ¿cuál sería nuestra historia?",
+            "¿Qué canción sientes que describe perfectamente nuestra conexión?",
+            "¿Cuál es tu recuerdo favorito de nosotros a solas?",
+            "¿Qué es algo que nunca te cansas de mirar en mí?",
+            "Si pudiéramos escapar esta noche a cualquier lugar del mundo, ¿a dónde iríamos?",
+            "¿Qué miedo desapareció desde que estamos juntos?",
+            "¿Cuál es el detalle más pequeño que hago pero que te enamora cada vez?"
+        ];
+
+        const bancoVersos = [
+            "Si tuviera que elegir entre respirar y amarte, usaría mi último aliento para decirte que eres mi eternidad.",
+            "Eres la única luz que acepto en medio de mi oscuridad favorita.",
+            "Ni el tiempo ni las sombras podrán borrar lo que nuestras almas ya pactaron.",
+            "Te amo como aman las cosas oscuras: en secreto, con intensidad y para siempre.",
+            "En un mundo lleno de ruido, tu voz es mi único santuario."
+        ];
+
+        function nuevaPregunta() {
+            const actual = document.getElementById('pregunta-actual').innerText;
+            let elegida = actual;
+            while (elegida === actual) {
+                elegida = bancoPreguntas[Math.floor(Math.random() * bancoPreguntas.length)];
+            }
+            document.getElementById('pregunta-actual').innerText = elegida;
+        }
+
+        function generarVerso() {
+            const verso = bancoVersos[Math.floor(Math.random() * bancoVersos.length)];
+            document.getElementById('verso-box').innerText = `"${verso}"`;
+        }
+
+        function copiarAlGrimorio() {
+            const texto = document.getElementById('verso-box').innerText;
+            document.getElementById('ded-mensaje').value = texto;
+            const btnDed = document.querySelectorAll('.tab-btn')[2];
+            cambiarTab('dedicatorias', btnDed);
+        }
+
+        async function cargarDedicatorias() {
+            const res = await fetch('/api/dedicatorias');
+            const datos = await res.json();
+            const contenedor = document.getElementById('lista-dedicatorias');
+            contenedor.innerHTML = '';
+
+            if (datos.length === 0) {
+                contenedor.innerHTML = '<p style="color:var(--muted)">Aún no hay dedicatorias guardadas.</p>';
+                return;
+            }
+
+            datos.forEach(item => {
+                contenedor.innerHTML += `
+                    <div class="entry-card">
+                        <div class="entry-meta">
+                            <span>${item.estado_animo}</span>
+                            <span>${item.fecha}</span>
+                        </div>
+                        <div class="entry-body">"${item.mensaje}"</div>
+                        <div class="entry-footer">— De ${item.autor} para ${item.destinatario}</div>
+                    </div>
+                `;
+            });
+        }
+
+        async function enviarDedicatoria() {
+            if (!apodoActivo) {
+                alert('Primero escribe y entra con tu apodo en la barra superior.');
+                return;
+            }
+            const destinatario = document.getElementById('ded-destinatario').value || 'Mi Eternidad';
+            const estado_animo = document.getElementById('ded-animo').value;
+            const mensaje = document.getElementById('ded-mensaje').value;
+
+            if (!mensaje.trim()) {
+                alert('Escribe un mensaje antes de guardarlo.');
+                return;
+            }
+
+            await fetch('/api/dedicatorias', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ autor: apodoActivo, destinatario, estado_animo, mensaje })
+            });
+
+            document.getElementById('ded-mensaje').value = '';
+            cargarDedicatorias();
+            cargarUsuarios();
+        }
+
+        async function cargarRespuestas() {
+            const res = await fetch('/api/respuestas');
+            const datos = await res.json();
+            const contenedor = document.getElementById('lista-respuestas');
+            contenedor.innerHTML = '';
+
+            if (datos.length === 0) {
+                contenedor.innerHTML = '<p style="color:var(--muted)">Aún no hay respuestas guardadas.</p>';
+                return;
+            }
+
+            datos.forEach(item => {
+                contenedor.innerHTML += `
+                    <div class="entry-card">
+                        <div class="entry-meta">
+                            <span>🕯️ ${item.jugador}</span>
+                            <span>${item.fecha}</span>
+                        </div>
+                        <p style="font-size:0.95rem; color:#ff8fa3; margin-bottom:0.4rem;"><strong>P:</strong> ${item.pregunta}</p>
+                        <div class="entry-body">"${item.respuesta}"</div>
+                    </div>
+                `;
+            });
+        }
+
+        async function enviarRespuesta() {
+            if (!apodoActivo) {
+                alert('Primero escribe y entra con tu apodo en la barra superior.');
+                return;
+            }
+            const pregunta = document.getElementById('pregunta-actual').innerText;
+            const respuesta = document.getElementById('jugador-respuesta').value;
+
+            if (!respuesta.trim()) {
+                alert('Escribe tu respuesta antes de guardarla.');
+                return;
+            }
+
+            await fetch('/api/respuestas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ jugador: apodoActivo, pregunta, respuesta })
+            });
+
+            document.getElementById('jugador-respuesta').value = '';
+            nuevaPregunta();
+            cargarRespuestas();
+            cargarUsuarios();
+        }
+
+        async function cargarPerfiles() {
+            const res = await fetch('/api/perfiles');
+            const perfiles = await res.json();
+            const cont = document.getElementById('contenedor-perfiles');
+            cont.innerHTML = '';
+
+            if (perfiles.length === 0) {
+                cont.innerHTML = '<p style="color:var(--muted)">Aún no hay apodos registrados. Escribe tu apodo arriba y responde algo.</p>';
+                return;
+            }
+
+            perfiles.forEach(p => {
+                let htmlRes = '<p style="color:var(--muted); font-size:0.95rem;">Sin respuestas aún.</p>';
+                if (p.respuestas.length > 0) {
+                    htmlRes = '<div class="feed-grid">' + p.respuestas.map(r => `
+                        <div class="entry-card">
+                            <div class="entry-meta"><span>Pregunta</span><span>${r.fecha}</span></div>
+                            <p style="font-size:0.95rem; color:#ff8fa3; margin-bottom:0.4rem;">${r.pregunta}</p>
+                            <div class="entry-body">"${r.respuesta}"</div>
+                        </div>
+                    `).join('') + '</div>';
+                }
+
+                let htmlDed = '';
+                if (p.dedicatorias.length > 0) {
+                    htmlDed = '<h4 style="margin-top:1rem; color:#e2dce6;">Dedicatorias de ' + p.apodo + ':</h4><div class="feed-grid">' +
+                        p.dedicatorias.map(d => `
+                            <div class="entry-card">
+                                <div class="entry-meta"><span>${d.estado_animo}</span><span>${d.fecha}</span></div>
+                                <div class="entry-body">"${d.mensaje}"</div>
+                                <div class="entry-footer">Para ${d.destinatario}</div>
+                            </div>
+                        `).join('') + '</div>';
+                }
+
+                cont.innerHTML += `
+                    <div class="perfil-bloque">
+                        <div class="perfil-titulo">🖤 Apartado de: ${p.apodo}</div>
+                        ${htmlRes}
+                        ${htmlDed}
+                    </div>
+                `;
+            });
+        }
+
+        window.onload = () => {
+            actualizarTextoApodo();
+            cargarUsuarios();
+            cargarRespuestas();
+            cargarDedicatorias();
+            cargarPerfiles();
+        };
+    </script>
+</body>
+</html>
