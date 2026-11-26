@@ -460,8 +460,8 @@
                 <canvas id="interactive-art" width="380" height="380"></canvas>
                 <div class="controls-row">
                     <button class="tab-btn" onclick="cambiarFigura('rosa')">🌹 Rosa de Maurer</button>
-                    <button class="tab-btn" onclick="cambiarFigura('corazon')">🫀 Corazón Paramétrico</button>
-                    <button class="tab-btn" onclick="cambiarFigura('espiral')">🌀 Espiral Hipnótica</button>
+                    <button class="tab-btn" onclick="cambiarFigura('dalia')">🌺 Dalia</button>
+                    <button class="tab-btn" onclick="cambiarFigura('alin')">🍷 ALIN &amp; Corazón</button>
                 </div>
             </div>
         </div>
@@ -613,12 +613,40 @@
         });
 
         artCanvas.addEventListener('click', () => {
-            const modos = ['rosa', 'corazon', 'espiral'];
+            const modos = ['rosa', 'dalia', 'alin'];
             modoFigura = modos[(modos.indexOf(modoFigura) + 1) % modos.length];
         });
 
         function cambiarFigura(nuevoModo) {
             modoFigura = nuevoModo;
+        }
+
+        function dibujarPetaloDalia(ctx, largo, ancho, angulo, colorTrazo, colorRelleno, opacidad) {
+            ctx.save();
+            ctx.rotate(angulo);
+            ctx.globalAlpha = opacidad;
+
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.bezierCurveTo(ancho, -largo * 0.25, ancho * 0.85, -largo * 0.82, 0, -largo);
+            ctx.bezierCurveTo(-ancho * 0.85, -largo * 0.82, -ancho, -largo * 0.25, 0, 0);
+            ctx.closePath();
+
+            ctx.fillStyle = colorRelleno;
+            ctx.fill();
+            ctx.strokeStyle = colorTrazo;
+            ctx.lineWidth = 1.4;
+            ctx.stroke();
+
+            // Nervadura central del pétalo de dalia
+            ctx.beginPath();
+            ctx.moveTo(0, -4);
+            ctx.lineTo(0, -largo * 0.85);
+            ctx.strokeStyle = 'rgba(255, 195, 208, 0.28)';
+            ctx.lineWidth = 0.9;
+            ctx.stroke();
+
+            ctx.restore();
         }
 
         function dibujarArte() {
@@ -647,34 +675,103 @@
                     else artCtx.lineTo(x, y);
                 }
                 artCtx.stroke();
-            } else if (modoFigura === 'corazon') {
-                const latido = 1 + Math.sin(anguloAnim * 4) * 0.08;
-                artCtx.beginPath();
-                artCtx.strokeStyle = '#ff1e42';
-                artCtx.lineWidth = 2.5;
-                for (let t = 0; t <= Math.PI * 2; t += 0.02) {
-                    let x = 16 * Math.pow(Math.sin(t), 3);
-                    let y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-                    x *= 8.5 * latido;
-                    y *= 8.5 * latido;
-                    if (t === 0) artCtx.moveTo(x, y);
-                    else artCtx.lineTo(x, y);
+            } else if (modoFigura === 'dalia') {
+                // Dalia formándose capa por capa en movimiento
+                const ciclo = ((anguloAnim * 0.35) % 1 + 1) % 1;
+                const respiracion = 1 + Math.sin(anguloAnim * 2.5) * 0.025;
+                artCtx.save();
+                artCtx.scale(respiracion, respiracion);
+                artCtx.rotate(Math.sin(anguloAnim * 0.5) * 0.08);
+
+                const capas = [
+                    { petalos: 16, largo: 148, ancho: 28, desfase: 0.0, inicio: 0.00, fin: 0.32, relleno: 'rgba(110, 12, 30, 0.42)', trazo: '#c92a46' },
+                    { petalos: 14, largo: 120, ancho: 25, desfase: 0.22, inicio: 0.22, fin: 0.54, relleno: 'rgba(145, 16, 40, 0.50)', trazo: '#e03150' },
+                    { petalos: 12, largo: 92,  ancho: 22, desfase: 0.45, inicio: 0.44, fin: 0.76, relleno: 'rgba(178, 24, 52, 0.58)', trazo: '#ff4d6d' },
+                    { petalos: 10, largo: 64,  ancho: 18, desfase: 0.70, inicio: 0.66, fin: 0.94, relleno: 'rgba(205, 45, 74, 0.68)', trazo: '#ff758f' }
+                ];
+
+                capas.forEach((capa, idxCapa) => {
+                    const avanceCapa = Math.max(0, Math.min(1, (ciclo - capa.inicio) / (capa.fin - capa.inicio)));
+                    const cantidadActiva = Math.floor(avanceCapa * capa.petalos);
+                    const pasoAngulo = (Math.PI * 2) / capa.petalos;
+
+                    for (let i = 0; i < cantidadActiva; i++) {
+                        const esUltimo = i === cantidadActiva - 1;
+                        const factorCrecimiento = esUltimo
+                            ? Math.max(0.25, (avanceCapa * capa.petalos) - i)
+                            : 1;
+                        const angulo = i * pasoAngulo + capa.desfase + anguloAnim * (0.12 + idxCapa * 0.04);
+                        dibujarPetaloDalia(
+                            artCtx,
+                            capa.largo * factorCrecimiento,
+                            capa.ancho * factorCrecimiento,
+                            angulo,
+                            capa.trazo,
+                            capa.relleno,
+                            0.35 + factorCrecimiento * 0.65
+                        );
+                    }
+                });
+
+                // Botón central de la dalia formándose al final del ciclo
+                const opCentro = Math.max(0, Math.min(1, (ciclo - 0.72) / 0.25));
+                if (opCentro > 0) {
+                    artCtx.save();
+                    artCtx.globalAlpha = opCentro;
+                    artCtx.beginPath();
+                    artCtx.arc(0, 0, 18 * (0.4 + opCentro * 0.6), 0, Math.PI * 2);
+                    artCtx.fillStyle = '#590817';
+                    artCtx.fill();
+                    artCtx.lineWidth = 2;
+                    artCtx.strokeStyle = '#ff8fa3';
+                    artCtx.stroke();
+                    artCtx.restore();
                 }
-                artCtx.closePath();
-                artCtx.stroke();
-            } else if (modoFigura === 'espiral') {
+
+                artCtx.restore();
+            } else if (modoFigura === 'alin') {
+                const ciclo = ((anguloAnim * 0.45) % 1 + 1) % 1;
+                const latido = 1 + Math.sin(anguloAnim * 3) * 0.035;
+
+                artCtx.save();
+                artCtx.scale(latido, latido);
+
+                const pasos = 180;
+                const hasta = Math.max(2, Math.floor(pasos * Math.min(1, ciclo * 1.35)));
                 artCtx.beginPath();
-                artCtx.strokeStyle = '#c77dff';
-                artCtx.lineWidth = 1.8;
-                for (let i = 0; i < 250; i++) {
-                    const angle = 0.15 * i + anguloAnim * 2;
-                    const r = 0.65 * i;
-                    const x = r * Math.cos(angle);
-                    const y = r * Math.sin(angle);
+                artCtx.strokeStyle = '#8b1e2f';
+                artCtx.lineWidth = 3.2;
+                artCtx.lineCap = 'round';
+                for (let i = 0; i <= hasta; i++) {
+                    const t = (i / pasos) * Math.PI * 2;
+                    const x = 16 * Math.pow(Math.sin(t), 3) * 7.2;
+                    const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * 7.2 - 16;
                     if (i === 0) artCtx.moveTo(x, y);
                     else artCtx.lineTo(x, y);
                 }
                 artCtx.stroke();
+
+                const avanceAlin = Math.min(1, Math.max(0.08, ciclo * 1.55));
+                const opAlin = Math.max(0.2, Math.min(1, (ciclo - 0.12) * 1.8));
+                artCtx.save();
+                artCtx.beginPath();
+                artCtx.rect(-95, -75, 190 * avanceAlin, 115);
+                artCtx.clip();
+                artCtx.fillStyle = `rgba(214, 93, 109, ${opAlin})`;
+                artCtx.font = 'italic bold 36px "Cormorant Garamond", Georgia, serif';
+                artCtx.textAlign = 'center';
+                artCtx.textBaseline = 'middle';
+                artCtx.fillText('ALIN', 0, -16);
+                artCtx.restore();
+
+                const opTeAmo = Math.max(0.2, Math.min(1, (ciclo - 0.35) * 2.2));
+                const flotar = Math.sin(anguloAnim * 2.2) * 3;
+                artCtx.fillStyle = `rgba(176, 42, 66, ${opTeAmo})`;
+                artCtx.font = 'bold 18px "Cinzel Decorative", cursive';
+                artCtx.textAlign = 'center';
+                artCtx.fillText('TE AMO', 0, 126 + flotar);
+
+                artCtx.restore();
             }
 
             artCtx.restore();
@@ -859,7 +956,7 @@
 
                 cont.innerHTML += `
                     <div class="perfil-bloque">
-                        <div class="perfil-titulo">🖤 Apartado de: ${p.apodo}</div>
+                        <div class="perfil-titulo">🖤 ${p.apodo}</div>
                         ${htmlRes}
                         ${htmlDed}
                     </div>
@@ -867,13 +964,11 @@
             });
         }
 
-        window.onload = () => {
-            actualizarTextoApodo();
-            cargarUsuarios();
-            cargarRespuestas();
-            cargarDedicatorias();
-            cargarPerfiles();
-        };
+        actualizarTextoApodo();
+        cargarUsuarios();
+        cargarRespuestas();
+        cargarDedicatorias();
+        cargarPerfiles();
     </script>
 </body>
 </html>
